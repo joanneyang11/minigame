@@ -3,17 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>✨ Guess Who — Department Game</title>
+<title>🐴 Guess Who — RMPO Game</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --cream: #FDF6EC;
-    --ink: #1A1208;
-    --gold: #C9993A;
-    --rust: #C45C35;
-    --sage: #6B8F71;
-    --blush: #E8C4B0;
-    --paper: #F5EDD9;
+    --cream: #FFF5F5;
+    --ink: #1A0505;
+    --gold: #D4A017;
+    --rust: #C8102E;
+    --sage: #8B0000;
+    --blush: #FFCDD2;
+    --paper: #FFF0F0;
+    --red: #C8102E;
+    --red-dark: #8B0000;
+    --lantern: #FF6B35;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -26,14 +29,35 @@
     overflow-x: hidden;
   }
 
+  /* CNY background pattern */
   body::before {
     content: '';
     position: fixed;
     inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(200,16,46,0.06) 0%, transparent 50%),
+      radial-gradient(circle at 85% 80%, rgba(200,16,46,0.06) 0%, transparent 50%),
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='40' cy='40' r='1.5' fill='%23C8102E' opacity='0.08'/%3E%3Ccircle cx='0' cy='0' r='1.5' fill='%23C8102E' opacity='0.08'/%3E%3Ccircle cx='80' cy='0' r='1.5' fill='%23C8102E' opacity='0.08'/%3E%3Ccircle cx='0' cy='80' r='1.5' fill='%23C8102E' opacity='0.08'/%3E%3Ccircle cx='80' cy='80' r='1.5' fill='%23C8102E' opacity='0.08'/%3E%3C/svg%3E");
+    background-size: 100% 100%, 100% 100%, 80px 80px;
     pointer-events: none;
     z-index: 9999;
-    opacity: 0.4;
+  }
+
+  /* Floating lanterns top corners */
+  body::after {
+    content: '🏮';
+    position: fixed;
+    top: 16px;
+    right: 20px;
+    font-size: 32px;
+    z-index: 9998;
+    animation: sway 3s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes sway {
+    0%, 100% { transform: rotate(-8deg); }
+    50% { transform: rotate(8deg); }
   }
 
   .screen { display: none; }
@@ -51,13 +75,13 @@
   .decorative-line {
     width: 120px;
     height: 2px;
-    background: var(--gold);
+    background: linear-gradient(90deg, transparent, var(--red), transparent);
     margin: 0 auto 32px;
   }
 
   .btn-primary {
-    background: var(--ink);
-    color: var(--cream);
+    background: var(--red);
+    color: #fff;
     padding: 18px 44px;
     font-family: 'DM Sans', sans-serif;
     font-size: 13px;
@@ -66,14 +90,16 @@
     text-transform: uppercase;
     cursor: pointer;
     border: none;
+    border-radius: 4px;
     transition: all 0.2s;
+    box-shadow: 0 4px 14px rgba(200,16,46,0.3);
   }
-  .btn-primary:hover { background: var(--rust); transform: translateY(-2px); }
-  .btn-primary:disabled { background: #B8A88A; cursor: not-allowed; transform: none; }
+  .btn-primary:hover { background: var(--red-dark); transform: translateY(-2px); box-shadow: 0 6px 18px rgba(200,16,46,0.4); }
+  .btn-primary:disabled { background: #E8A0A8; cursor: not-allowed; transform: none; box-shadow: none; }
 
   .btn-secondary {
     background: transparent;
-    color: var(--ink);
+    color: var(--red);
     padding: 17px 44px;
     font-family: 'DM Sans', sans-serif;
     font-size: 13px;
@@ -81,10 +107,11 @@
     letter-spacing: 0.15em;
     text-transform: uppercase;
     cursor: pointer;
-    border: 2px solid var(--ink);
+    border: 2px solid var(--red);
+    border-radius: 4px;
     transition: all 0.2s;
   }
-  .btn-secondary:hover { background: var(--ink); color: var(--cream); }
+  .btn-secondary:hover { background: var(--red); color: #fff; }
 
   @keyframes slideIn {
     from { opacity: 0; transform: translateY(10px); }
@@ -108,7 +135,40 @@
     letter-spacing: -2px;
     margin-bottom: 8px;
   }
-  h1 em { font-style: italic; color: var(--rust); }
+  h1 em { font-style: italic; color: var(--red); }
+
+  .dept-badge {
+    display: inline-block;
+    background: var(--red);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    padding: 5px 16px;
+    border-radius: 20px;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+  }
+
+  .cny-year {
+    font-size: 13px;
+    color: var(--gold);
+    letter-spacing: 0.2em;
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+
+  .horse-row {
+    font-size: 28px;
+    letter-spacing: 8px;
+    margin: 8px 0 4px;
+    animation: horseGallop 1.8s ease-in-out infinite alternate;
+  }
+
+  @keyframes horseGallop {
+    from { transform: translateX(-4px); }
+    to { transform: translateX(4px); }
+  }
 
   .subtitle {
     font-size: 16px;
@@ -157,7 +217,7 @@
 
   .badge {
     display: inline-block;
-    background: var(--gold);
+    background: var(--red);
     color: white;
     font-size: 10px;
     font-weight: 500;
@@ -165,6 +225,7 @@
     padding: 4px 12px;
     margin-bottom: 20px;
     text-transform: uppercase;
+    border-radius: 3px;
   }
 
   .howto {
@@ -187,7 +248,7 @@
   .howto-step:last-child { border-bottom: none; }
 
   .step-num {
-    background: var(--gold);
+    background: var(--red);
     color: white;
     font-size: 11px;
     font-weight: 700;
@@ -227,11 +288,11 @@
     outline: none;
     transition: border-color 0.2s;
   }
-  .url-input:focus { border-color: var(--gold); }
+  .url-input:focus { border-color: var(--red); }
   .url-input::placeholder { color: #B8A88A; font-size: 13px; }
 
   .fetch-btn {
-    background: var(--sage);
+    background: var(--red);
     color: white;
     border: none;
     padding: 14px 28px;
@@ -244,9 +305,10 @@
     transition: all 0.2s;
     white-space: nowrap;
     flex-shrink: 0;
+    border-radius: 4px;
   }
-  .fetch-btn:hover { background: #587561; }
-  .fetch-btn:disabled { background: #B8C4BA; cursor: not-allowed; }
+  .fetch-btn:hover { background: var(--red-dark); }
+  .fetch-btn:disabled { background: #E8A0A8; cursor: not-allowed; }
 
   .status-msg {
     display: none;
@@ -311,7 +373,7 @@
   }
   .preview-list::-webkit-scrollbar { width: 4px; }
   .preview-list::-webkit-scrollbar-track { background: #E4D4B8; }
-  .preview-list::-webkit-scrollbar-thumb { background: var(--gold); }
+  .preview-list::-webkit-scrollbar-thumb { background: var(--red); }
 
   .preview-item {
     background: var(--paper);
@@ -327,7 +389,7 @@
     font-family: 'Playfair Display', serif;
     font-size: 15px;
     font-weight: 700;
-    color: var(--rust);
+    color: var(--red);
     flex-shrink: 0;
     min-width: 90px;
   }
@@ -349,7 +411,7 @@
     text-decoration: underline;
     text-underline-offset: 3px;
   }
-  .manual-link:hover { color: var(--rust); }
+  .manual-link:hover { color: var(--red); }
 
   /* ===== MANUAL SETUP ===== */
   #setup {
@@ -426,7 +488,7 @@
     font-size: 14px; cursor: pointer;
     transition: all 0.2s;
   }
-  .add-entry-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .add-entry-btn:hover { border-color: var(--red); color: var(--red); }
 
   .action-row {
     display: flex; gap: 16px;
@@ -449,7 +511,7 @@
   }
 
   .progress-fill {
-    height: 100%; background: var(--gold);
+    height: 100%; background: var(--red);
     transition: width 0.5s ease;
   }
 
@@ -478,8 +540,8 @@
   }
 
   .card-front {
-    background: var(--ink);
-    color: var(--cream);
+    background: var(--red);
+    color: #fff;
     border: 4px solid var(--gold);
   }
 
@@ -497,13 +559,13 @@
 
   .card-hint {
     margin-top: 32px; font-size: 12px;
-    color: #8B7B65; letter-spacing: 0.15em;
+    color: rgba(255,255,255,0.6); letter-spacing: 0.15em;
     text-transform: uppercase;
   }
 
   .card-back {
-    background: var(--paper);
-    border: 4px solid var(--rust);
+    background: #FFF5F5;
+    border: 4px solid var(--gold);
     transform: rotateY(180deg);
   }
 
@@ -571,7 +633,7 @@
   .recap-name {
     font-family: 'Playfair Display', serif;
     font-size: 18px; font-weight: 700;
-    margin-bottom: 8px; color: var(--rust);
+    margin-bottom: 8px; color: var(--red);
   }
 
   .recap-story { font-size: 13px; color: #6B5B45; line-height: 1.6; }
@@ -591,9 +653,12 @@
 <!-- LANDING -->
 <div id="landing" class="screen active">
   <div class="decorative-line"></div>
+  <p class="cny-year">🧧 Year of the Horse · 2026 🧧</p>
+  <span class="dept-badge">RMPO</span>
   <p class="eyebrow">Department Meeting Game</p>
+  <div class="horse-row">🐴🐴🐴</div>
   <h1>Guess<br><em>Who?</em></h1>
-  <p class="subtitle">Read a teammate's story. Let the room guess. Flip to reveal. Get to know your team a little better. 🥂</p>
+  <p class="subtitle">Read a teammate's story. Let the room guess. Flip to reveal. 🥂</p>
   <div style="display:flex; flex-direction:column; align-items:center; gap:14px;">
     <button class="btn-primary" onclick="showScreen('importScreen')">Load from Google Sheets →</button>
     <button class="btn-secondary" onclick="showScreen('setup')">Enter responses manually</button>
@@ -934,7 +999,7 @@ function restartGame() {
 function launchConfetti() {
   const container = document.getElementById('confetti-container');
   container.innerHTML = '';
-  const colors = ['#C9993A','#C45C35','#6B8F71','#E8C4B0','#1A1208'];
+  const colors = ['#C8102E','#D4A017','#FF6B35','#FFD700','#8B0000','#FF9999'];
   for (let i = 0; i < 90; i++) {
     const p = document.createElement('div');
     p.className = 'confetti-piece';
