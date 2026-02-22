@@ -631,8 +631,7 @@
 
     <div class="url-row">
       <input type="text" class="url-input" id="sheetsUrl"
-        placeholder="https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec"
-        placeholder="https://docs.google.com/spreadsheets/d/..."/>
+        placeholder="Paste Google Sheet URL or Apps Script URL…"/>
       <button class="fetch-btn" id="fetchBtn" onclick="fetchSheetData()">Load ✦</button>
     </div>
     <div class="status-msg" id="statusMsg"></div>
@@ -751,25 +750,42 @@ function extractGid(url) {
 }
 
 async function fetchSheetData() {
-  const appsScriptUrl = document.getElementById('sheetsUrl').value.trim();
-  if (!appsScriptUrl) { showStatus('error', '⚠ Please paste your Apps Script URL first.'); return; }
+  const inputUrl = document.getElementById('sheetsUrl').value.trim();
+  if (!inputUrl) { showStatus('error', '⚠ Please paste your Google Sheet or Apps Script URL first.'); return; }
 
   showStatus('loading', 'Fetching responses…');
   document.getElementById('fetchBtn').disabled = true;
 
   try {
-    const resp = await fetch(appsScriptUrl);
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const data = await resp.json();
+    let loaded;
 
-    if (!Array.isArray(data) || data.length === 0) throw new Error('No data returned');
-
-    const loaded = data
-      .map(row => ({
-        name: (row.name || row.Name || '').trim(),
-        story: (row.story || row.Story || row.response || row.Response || Object.values(row)[1] || '').trim()
-      }))
-      .filter(r => r.name && r.story);
+    if (inputUrl.includes('spreadsheets/d/')) {
+      // Google Sheets URL — use CSV export endpoint (works from any origin)
+      const sheetId = extractSheetId(inputUrl);
+      const gid = extractGid(inputUrl);
+      if (!sheetId) throw new Error('Could not parse Sheet ID from URL');
+      const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
+      const resp = await fetch(csvUrl);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status} — make sure the sheet is shared publicly`);
+      const csv = await resp.text();
+      const rows = csv.trim().split('\n').map(r => r.split(',').map(c => c.replace(/^"|"$/g, '').trim()));
+      // rows[0] = headers, rows[1..] = data. Name = col 1, Story = col 2
+      loaded = rows.slice(1)
+        .map(row => ({ name: row[1] || '', story: row[2] || '' }))
+        .filter(r => r.name && r.story);
+    } else {
+      // Apps Script URL
+      const resp = await fetch(inputUrl);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      if (!Array.isArray(data) || data.length === 0) throw new Error('No data returned');
+      loaded = data
+        .map(row => ({
+          name: (row.name || row.Name || '').trim(),
+          story: (row.story || row.Story || row.response || row.Response || Object.values(row)[1] || '').trim()
+        }))
+        .filter(r => r.name && r.story);
+    }
 
     if (loaded.length === 0) throw new Error('No valid entries found');
 
@@ -778,7 +794,7 @@ async function fetchSheetData() {
     renderPreview(loaded);
   } catch(e) {
     console.error('Fetch error:', e);
-    showStatus('error', '⚠ Could not load responses. Double-check your Apps Script URL is correct and deployed as "Anyone".');
+    showStatus('error', '⚠ Could not load responses. Make sure the sheet is shared publicly (Anyone with the link can view).');
     document.getElementById('fetchBtn').disabled = false;
   }
 }
@@ -788,6 +804,22 @@ function showStatus(type, msg) {
   el.className = 'status-msg ' + type;
   const spin = type === 'loading' ? '<div class="spinner"></div>' : '';
   el.innerHTML = spin + '<span>' + msg + '</span>';
+}
+
+function renderPreview(loaded) {
+  const section = document.getElementById('previewSection');
+  const list = document.getElementById('previewList');
+  const count = document.getElementById('previewCount');
+  count.textContent = `${loaded.length} response${loaded.length !== 1 ? 's' : ''}`;
+  list.innerHTML = '';
+  loaded.forEach((e, i) => {
+    const div = document.createElement('div');
+    div.className = 'preview-item';
+    div.style.animationDelay = `${i * 0.05}s`;
+    div.innerHTML = `<div class="preview-name">${escHtml(e.name)}</div><div class="preview-story">${escHtml(e.story)}</div>`;
+    list.appendChild(div);
+  });
+  section.style.display = 'block';
 }
 
 function resetImport() {
