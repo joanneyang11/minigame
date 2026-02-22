@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>✨ Guess Who — Department Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #FDF6EC;
+    --ink: #1A1208;
+    --gold: #C9993A;
+    --rust: #C45C35;
+    --sage: #6B8F71;
+    --blush: #E8C4B0;
+    --paper: #F5EDD9;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.4;
+  }
+
+  .screen { display: none; }
+  .screen.active { display: flex; flex-direction: column; align-items: center; }
+
+  .eyebrow {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 20px;
+  }
+
+  .decorative-line {
+    width: 120px;
+    height: 2px;
+    background: var(--gold);
+    margin: 0 auto 32px;
+  }
+
+  .btn-primary {
+    background: var(--ink);
+    color: var(--cream);
+    padding: 18px 44px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+  }
+  .btn-primary:hover { background: var(--rust); transform: translateY(-2px); }
+  .btn-primary:disabled { background: #B8A88A; cursor: not-allowed; transform: none; }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--ink);
+    padding: 17px 44px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 2px solid var(--ink);
+    transition: all 0.2s;
+  }
+  .btn-secondary:hover { background: var(--ink); color: var(--cream); }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ===== LANDING ===== */
+  #landing {
+    min-height: 100vh;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(52px, 10vw, 96px);
+    font-weight: 900;
+    line-height: 0.95;
+    letter-spacing: -2px;
+    margin-bottom: 8px;
+  }
+  h1 em { font-style: italic; color: var(--rust); }
+
+  .subtitle {
+    font-size: 16px;
+    color: #6B5B45;
+    max-width: 440px;
+    line-height: 1.7;
+    margin: 28px auto 48px;
+  }
+
+  /* ===== IMPORT ===== */
+  #importScreen {
+    min-height: 100vh;
+    justify-content: flex-start;
+    padding: 60px 20px;
+  }
+
+  .import-header {
+    text-align: center;
+    margin-bottom: 48px;
+    width: 100%;
+  }
+
+  .import-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(28px, 5vw, 40px);
+    font-weight: 700;
+  }
+
+  .import-header p {
+    font-size: 14px;
+    color: #6B5B45;
+    margin-top: 10px;
+    line-height: 1.7;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .import-box {
+    background: var(--paper);
+    border: 1px solid #D4C4A8;
+    padding: 36px;
+    max-width: 680px;
+    width: 100%;
+  }
+
+  .badge {
+    display: inline-block;
+    background: var(--gold);
+    color: white;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    padding: 4px 12px;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+  }
+
+  .howto {
+    background: white;
+    border: 1px solid #E4D4B8;
+    padding: 20px 24px;
+    margin-bottom: 28px;
+  }
+
+  .howto-step {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 9px 0;
+    border-bottom: 1px solid #F0E4CC;
+    font-size: 13px;
+    color: #5B4B35;
+    line-height: 1.6;
+  }
+  .howto-step:last-child { border-bottom: none; }
+
+  .step-num {
+    background: var(--gold);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .howto-step strong { color: var(--ink); }
+  .howto-step code {
+    background: #F0E4CC;
+    padding: 1px 6px;
+    font-size: 12px;
+    font-family: monospace;
+  }
+
+  .url-row {
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .url-input {
+    flex: 1;
+    min-width: 0;
+    border: 2px solid #D4C4A8;
+    background: white;
+    padding: 14px 18px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .url-input:focus { border-color: var(--gold); }
+  .url-input::placeholder { color: #B8A88A; font-size: 13px; }
+
+  .fetch-btn {
+    background: var(--sage);
+    color: white;
+    border: none;
+    padding: 14px 28px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .fetch-btn:hover { background: #587561; }
+  .fetch-btn:disabled { background: #B8C4BA; cursor: not-allowed; }
+
+  .status-msg {
+    display: none;
+    margin-top: 14px;
+    padding: 13px 18px;
+    font-size: 13px;
+    align-items: center;
+    gap: 10px;
+    line-height: 1.5;
+  }
+  .status-msg.loading { display: flex; background: #EEF3EF; color: #587561; }
+  .status-msg.success { display: flex; background: #EEF3EF; color: #3D7348; }
+  .status-msg.error   { display: flex; background: #FDEEED; color: var(--rust); }
+
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+
+  /* Preview */
+  .preview-section {
+    margin-top: 32px;
+    max-width: 680px;
+    width: 100%;
+    animation: slideIn 0.4s ease;
+  }
+
+  .preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .preview-header h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  .preview-count {
+    font-size: 12px;
+    color: #9B8B75;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .preview-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 320px;
+    overflow-y: auto;
+    padding-right: 4px;
+    margin-bottom: 24px;
+  }
+  .preview-list::-webkit-scrollbar { width: 4px; }
+  .preview-list::-webkit-scrollbar-track { background: #E4D4B8; }
+  .preview-list::-webkit-scrollbar-thumb { background: var(--gold); }
+
+  .preview-item {
+    background: var(--paper);
+    border: 1px solid #D4C4A8;
+    padding: 14px 18px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    animation: slideIn 0.3s ease backwards;
+  }
+
+  .preview-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--rust);
+    flex-shrink: 0;
+    min-width: 90px;
+  }
+
+  .preview-story { font-size: 13px; color: #6B5B45; line-height: 1.5; }
+
+  .play-actions {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .manual-link {
+    font-size: 13px;
+    color: #9B8B75;
+    margin-top: 28px;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .manual-link:hover { color: var(--rust); }
+
+  /* ===== MANUAL SETUP ===== */
+  #setup {
+    min-height: 100vh;
+    justify-content: flex-start;
+    padding: 60px 20px;
+  }
+
+  .setup-header {
+    text-align: center;
+    margin-bottom: 48px;
+    width: 100%;
+  }
+
+  .setup-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 40px;
+    font-weight: 700;
+  }
+
+  .entry-area { width: 100%; max-width: 680px; }
+  .entries-list { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
+
+  .entry-card {
+    background: var(--paper);
+    border: 1px solid #D4C4A8;
+    padding: 20px 24px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    animation: slideIn 0.3s ease;
+  }
+
+  .entry-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--blush);
+    line-height: 1;
+    flex-shrink: 0;
+    width: 36px;
+  }
+
+  .entry-fields { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+
+  .entry-fields input, .entry-fields textarea {
+    border: 1px solid #D4C4A8;
+    background: white;
+    padding: 10px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s;
+    resize: none;
+  }
+  .entry-fields input:focus, .entry-fields textarea:focus { border-color: var(--gold); }
+  .entry-fields input::placeholder, .entry-fields textarea::placeholder { color: #B8A88A; }
+
+  .remove-btn {
+    background: none; border: none;
+    cursor: pointer; color: #C4A88A;
+    font-size: 18px; flex-shrink: 0;
+    padding: 4px; transition: color 0.2s;
+  }
+  .remove-btn:hover { color: var(--rust); }
+
+  .add-entry-btn {
+    background: transparent;
+    border: 2px dashed #C4A88A;
+    color: #8B6B45;
+    padding: 16px; width: 100%;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .add-entry-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+  .action-row {
+    display: flex; gap: 16px;
+    margin-top: 32px; justify-content: center;
+  }
+
+  /* ===== GAME ===== */
+  #game {
+    min-height: 100vh;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+
+  .game-header { text-align: center; margin-bottom: 48px; width: 100%; }
+
+  .progress-bar {
+    width: 100%; max-width: 600px;
+    height: 3px; background: #D4C4A8;
+    margin: 20px auto;
+  }
+
+  .progress-fill {
+    height: 100%; background: var(--gold);
+    transition: width 0.5s ease;
+  }
+
+  .card-container {
+    perspective: 1000px;
+    width: 100%; max-width: 580px;
+  }
+
+  .flip-card {
+    width: 100%; min-height: 360px;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+  }
+  .flip-card.flipped { transform: rotateY(180deg); }
+
+  .card-front, .card-back {
+    position: absolute; inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    padding: 48px 52px;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    text-align: center; min-height: 360px;
+  }
+
+  .card-front {
+    background: var(--ink);
+    color: var(--cream);
+    border: 4px solid var(--gold);
+  }
+
+  .card-front-label {
+    font-size: 11px; letter-spacing: 0.3em;
+    text-transform: uppercase; color: var(--gold);
+    margin-bottom: 24px;
+  }
+
+  .card-story {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(20px, 4vw, 28px);
+    font-style: italic; line-height: 1.5; font-weight: 700;
+  }
+
+  .card-hint {
+    margin-top: 32px; font-size: 12px;
+    color: #8B7B65; letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .card-back {
+    background: var(--paper);
+    border: 4px solid var(--rust);
+    transform: rotateY(180deg);
+  }
+
+  .reveal-label {
+    font-size: 11px; letter-spacing: 0.3em;
+    text-transform: uppercase; color: var(--rust);
+    margin-bottom: 16px;
+  }
+
+  .revealed-name {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(36px, 8vw, 64px);
+    font-weight: 900; color: var(--ink); line-height: 1;
+  }
+
+  .reveal-emoji { font-size: 52px; margin: 16px 0; }
+
+  .game-controls {
+    display: flex; gap: 16px;
+    margin-top: 32px; justify-content: center; flex-wrap: wrap;
+  }
+
+  /* ===== FINALE ===== */
+  #finale {
+    min-height: 100vh;
+    justify-content: center;
+    text-align: center;
+    padding: 60px 20px;
+  }
+
+  .finale-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(40px, 8vw, 72px);
+    font-weight: 900; line-height: 1;
+    margin-bottom: 24px;
+  }
+
+  .confetti-container {
+    position: fixed; inset: 0;
+    pointer-events: none; z-index: 100;
+  }
+
+  .confetti-piece {
+    position: absolute; top: -20px;
+    animation: confettiFall linear forwards;
+  }
+
+  @keyframes confettiFall {
+    to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+  }
+
+  .recap-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px; max-width: 680px; width: 100%;
+    margin: 40px auto;
+  }
+
+  .recap-card {
+    background: var(--paper); border: 1px solid #D4C4A8;
+    padding: 20px; text-align: left;
+    animation: slideIn 0.4s ease backwards;
+  }
+
+  .recap-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px; font-weight: 700;
+    margin-bottom: 8px; color: var(--rust);
+  }
+
+  .recap-story { font-size: 13px; color: #6B5B45; line-height: 1.6; }
+
+  @media (max-width: 520px) {
+    .card-front, .card-back { padding: 36px 28px; }
+    .url-row { flex-direction: column; }
+    .fetch-btn { width: 100%; text-align: center; }
+    .import-box { padding: 24px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="confetti-container" class="confetti-container"></div>
+
+<!-- LANDING -->
+<div id="landing" class="screen active">
+  <div class="decorative-line"></div>
+  <p class="eyebrow">Department Meeting Game</p>
+  <h1>Guess<br><em>Who?</em></h1>
+  <p class="subtitle">Read a teammate's story. Let the room guess. Flip to reveal. Get to know your team a little better. 🥂</p>
+  <div style="display:flex; flex-direction:column; align-items:center; gap:14px;">
+    <button class="btn-primary" onclick="showScreen('importScreen')">Load from Google Sheets →</button>
+    <button class="btn-secondary" onclick="showScreen('setup')">Enter responses manually</button>
+  </div>
+</div>
+
+<!-- IMPORT -->
+<div id="importScreen" class="screen">
+  <div class="import-header">
+    <p class="eyebrow">Auto-Import</p>
+    <h2>Connect your <em style="font-style:italic; color:var(--rust)">Google Sheet</em></h2>
+    <p>Paste your Google Apps Script URL below — the game will fetch everyone's answers automatically.</p>
+  </div>
+
+  <div class="import-box">
+    <div class="badge">How to get the URL</div>
+    <div class="howto">
+      <div class="howto-step">
+        <span class="step-num">1</span>
+        <span>Open your Google Sheet → click <strong>Extensions → Apps Script</strong></span>
+      </div>
+      <div class="howto-step">
+        <span class="step-num">2</span>
+        <span>Paste the script code (provided separately) → click <strong>Save 💾</strong></span>
+      </div>
+      <div class="howto-step">
+        <span class="step-num">3</span>
+        <span>Click <strong>Deploy → New Deployment → Web App</strong> → set "Who has access" to <strong>Anyone</strong> → Deploy</span>
+      </div>
+      <div class="howto-step">
+        <span class="step-num">4</span>
+        <span>Copy the <strong>Web App URL</strong> and paste it below</span>
+      </div>
+    </div>
+
+    <div class="url-row">
+      <input type="text" class="url-input" id="sheetsUrl"
+        placeholder="https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec"
+        placeholder="https://docs.google.com/spreadsheets/d/..."/>
+      <button class="fetch-btn" id="fetchBtn" onclick="fetchSheetData()">Load ✦</button>
+    </div>
+    <div class="status-msg" id="statusMsg"></div>
+
+
+  </div>
+
+  <div class="preview-section" id="previewSection" style="display:none;">
+    <div class="preview-header">
+      <h3>Responses loaded ✦</h3>
+      <span class="preview-count" id="previewCount"></span>
+    </div>
+    <div class="preview-list" id="previewList"></div>
+    <div class="play-actions">
+      <button class="btn-secondary" onclick="resetImport()">← Try another URL</button>
+      <button class="btn-primary" onclick="startGameFromImport()">Shuffle &amp; Play →</button>
+    </div>
+  </div>
+
+  <p class="manual-link" onclick="showScreen('setup')">Prefer to type responses manually →</p>
+</div>
+
+<!-- MANUAL SETUP -->
+<div id="setup" class="screen">
+  <div class="setup-header">
+    <p class="eyebrow">Manual Entry</p>
+    <h2>Enter the <em style="font-style:italic; color:var(--rust)">Stories</em></h2>
+    <p style="color:#6B5B45; font-size:14px; margin-top:10px;">Type each person's name and their story.</p>
+  </div>
+  <div class="entry-area">
+    <div class="entries-list" id="entriesList"></div>
+    <button class="add-entry-btn" onclick="addEntry()">+ Add Another Person</button>
+    <div class="action-row">
+      <button class="btn-secondary" onclick="showScreen('landing')">← Back</button>
+      <button class="btn-primary" onclick="startGameManual()">Shuffle &amp; Play →</button>
+    </div>
+  </div>
+</div>
+
+<!-- GAME -->
+<div id="game" class="screen">
+  <div class="game-header">
+    <p class="eyebrow">Round <span id="currentRound">1</span> of <span id="totalRounds">?</span></p>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+  </div>
+  <div class="card-container">
+    <div class="flip-card" id="flipCard" onclick="flipCard()">
+      <div class="card-front">
+        <p class="card-front-label">✦ Read this aloud ✦</p>
+        <p class="card-story" id="cardStory"></p>
+        <p class="card-hint">Tap to reveal who said it →</p>
+      </div>
+      <div class="card-back">
+        <p class="reveal-label">It was…</p>
+        <div class="reveal-emoji" id="revealEmoji">🎉</div>
+        <div class="revealed-name" id="revealedName"></div>
+      </div>
+    </div>
+  </div>
+  <div class="game-controls">
+    <button class="btn-secondary" onclick="prevCard()">← Previous</button>
+    <button class="btn-primary" id="nextBtn" onclick="nextCard()">Next Story →</button>
+  </div>
+</div>
+
+<!-- FINALE -->
+<div id="finale" class="screen">
+  <div style="font-size:24px; color:var(--gold); margin-bottom:20px;">✦ ✦ ✦</div>
+  <h2 class="finale-title">That's a <em style="color:var(--rust); font-style:italic;">wrap!</em></h2>
+  <p style="color:#6B5B45; font-size:16px; max-width:400px; line-height:1.7;">Now you know your teammates a little better. 🥂 Here's a full recap:</p>
+  <div class="recap-grid" id="recapGrid"></div>
+  <button class="btn-primary" onclick="restartGame()" style="margin-top:8px;">Play Again →</button>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────
+let entries = [];
+let shuffled = [];
+let currentIndex = 0;
+let cardFlipped = false;
+let entryCount = 0;
+const EMOJIS = ['🎉','🌟','🎊','✨','🥳','🎈','💫','🌈','🎯','🔥'];
+
+// ── Navigation ─────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ── Utilities ──────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showStatus(type, msg) {
+  const el = document.getElementById('statusMsg');
+  el.className = 'status-msg ' + type;
+  const spin = type === 'loading' ? '<div class="spinner"></div>' : '';
+  el.innerHTML = `${spin}<span>${msg}</span>`;
+}
+
+// ── Google Sheets fetch ─────────────────────────────────────────
+function extractSheetId(url) {
+  const m = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  return m ? m[1] : null;
+}
+
+function extractGid(url) {
+  const m = url.match(/[#&?]gid=(\d+)/);
+  return m ? m[1] : '0';
+}
+
+async function fetchSheetData() {
+  const appsScriptUrl = document.getElementById('sheetsUrl').value.trim();
+  if (!appsScriptUrl) { showStatus('error', '⚠ Please paste your Apps Script URL first.'); return; }
+
+  showStatus('loading', 'Fetching responses…');
+  document.getElementById('fetchBtn').disabled = true;
+
+  try {
+    const resp = await fetch(appsScriptUrl);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+
+    if (!Array.isArray(data) || data.length === 0) throw new Error('No data returned');
+
+    const loaded = data
+      .map(row => ({
+        name: (row.name || row.Name || '').trim(),
+        story: (row.story || row.Story || row.response || row.Response || Object.values(row)[1] || '').trim()
+      }))
+      .filter(r => r.name && r.story);
+
+    if (loaded.length === 0) throw new Error('No valid entries found');
+
+    entries = loaded;
+    showStatus('success', `✓ Loaded ${loaded.length} response${loaded.length !== 1 ? 's' : ''}!`);
+    renderPreview(loaded);
+  } catch(e) {
+    console.error('Fetch error:', e);
+    showStatus('error', '⚠ Could not load responses. Double-check your Apps Script URL is correct and deployed as "Anyone".');
+    document.getElementById('fetchBtn').disabled = false;
+  }
+}
+
+function showStatus(type, msg) {
+  const el = document.getElementById('statusMsg');
+  el.className = 'status-msg ' + type;
+  const spin = type === 'loading' ? '<div class="spinner"></div>' : '';
+  el.innerHTML = spin + '<span>' + msg + '</span>';
+}
+
+function resetImport() {
+  document.getElementById('sheetsUrl').value = '';
+  document.getElementById('statusMsg').className = 'status-msg';
+  document.getElementById('statusMsg').innerHTML = '';
+  document.getElementById('previewSection').style.display = 'none';
+  document.getElementById('fetchBtn').disabled = false;
+  entries = [];
+}
+
+function startGameFromImport() {
+  if (entries.length < 2) { alert('Need at least 2 responses to play!'); return; }
+  beginGame();
+}
+
+// ── Manual entry ───────────────────────────────────────────────
+function addEntry(name = '', story = '') {
+  entryCount++;
+  const list = document.getElementById('entriesList');
+  const num = list.children.length + 1;
+  const div = document.createElement('div');
+  div.className = 'entry-card';
+  div.innerHTML = `
+    <div class="entry-number">${String(num).padStart(2,'0')}</div>
+    <div class="entry-fields">
+      <input type="text" placeholder="Name" value="${escHtml(name)}" class="name-input">
+      <textarea rows="3" placeholder="Their story / fun fact…" class="story-input">${escHtml(story)}</textarea>
+    </div>
+    <button class="remove-btn" onclick="removeEntry(this)">✕</button>`;
+  list.appendChild(div);
+}
+
+function removeEntry(btn) {
+  btn.closest('.entry-card').remove();
+  document.querySelectorAll('.entry-card .entry-number').forEach((el,i) => {
+    el.textContent = String(i+1).padStart(2,'0');
+  });
+}
+
+function startGameManual() {
+  entries = [];
+  document.querySelectorAll('.entry-card').forEach(card => {
+    const name  = card.querySelector('.name-input').value.trim();
+    const story = card.querySelector('.story-input').value.trim();
+    if (name && story) entries.push({ name, story });
+  });
+  if (entries.length < 2) { alert('Please add at least 2 entries to play!'); return; }
+  beginGame();
+}
+
+// ── Game engine ────────────────────────────────────────────────
+function beginGame() {
+  shuffled = [...entries].sort(() => Math.random() - 0.5);
+  currentIndex = 0;
+  renderCard();
+  showScreen('game');
+}
+
+function renderCard() {
+  const card = shuffled[currentIndex];
+  document.getElementById('cardStory').textContent = `"${card.story}"`;
+  document.getElementById('revealedName').textContent = card.name;
+  document.getElementById('revealEmoji').textContent = EMOJIS[currentIndex % EMOJIS.length];
+  document.getElementById('currentRound').textContent = currentIndex + 1;
+  document.getElementById('totalRounds').textContent = shuffled.length;
+  document.getElementById('progressFill').style.width =
+    `${((currentIndex + 1) / shuffled.length) * 100}%`;
+  document.getElementById('nextBtn').textContent =
+    currentIndex === shuffled.length - 1 ? 'See Recap 🎉' : 'Next Story →';
+  cardFlipped = false;
+  document.getElementById('flipCard').classList.remove('flipped');
+}
+
+function flipCard() {
+  cardFlipped = !cardFlipped;
+  document.getElementById('flipCard').classList.toggle('flipped', cardFlipped);
+}
+
+function nextCard() {
+  if (currentIndex < shuffled.length - 1) { currentIndex++; renderCard(); }
+  else { showFinale(); }
+}
+
+function prevCard() {
+  if (currentIndex > 0) { currentIndex--; renderCard(); }
+}
+
+function showFinale() {
+  const grid = document.getElementById('recapGrid');
+  grid.innerHTML = '';
+  shuffled.forEach((e, i) => {
+    const div = document.createElement('div');
+    div.className = 'recap-card';
+    div.style.animationDelay = `${i * 0.08}s`;
+    div.innerHTML = `
+      <div class="recap-name">${EMOJIS[i % EMOJIS.length]} ${escHtml(e.name)}</div>
+      <div class="recap-story">${escHtml(e.story)}</div>`;
+    grid.appendChild(div);
+  });
+  showScreen('finale');
+  launchConfetti();
+}
+
+function restartGame() {
+  shuffled = [...entries].sort(() => Math.random() - 0.5);
+  currentIndex = 0;
+  renderCard();
+  showScreen('game');
+}
+
+function launchConfetti() {
+  const container = document.getElementById('confetti-container');
+  container.innerHTML = '';
+  const colors = ['#C9993A','#C45C35','#6B8F71','#E8C4B0','#1A1208'];
+  for (let i = 0; i < 90; i++) {
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    const size = Math.random() * 10 + 6;
+    p.style.cssText =
+      `left:${Math.random()*100}vw; width:${size}px; height:${size}px;
+       background:${colors[Math.floor(Math.random()*colors.length)]};
+       border-radius:${Math.random()>0.5?'50%':'0'};
+       animation-duration:${Math.random()*2+2}s;
+       animation-delay:${Math.random()*1.5}s;`;
+    container.appendChild(p);
+  }
+  setTimeout(() => container.innerHTML = '', 5000);
+}
+
+// ── Init ───────────────────────────────────────────────────────
+addEntry(); addEntry(); addEntry();
+
+
+</script>
+</body>
+</html>
